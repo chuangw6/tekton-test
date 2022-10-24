@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: pr-ci
+spec:
+  serviceAccountName: myksa
+  params:
+    - name: git-repo
+      value: https://github.com/chuangw6/tekton-test
+    - name: git-revision
+      value: main
+    - name: IMAGE
+      value: us-central1-docker.pkg.dev/chuangw-test/kaniko-example/ci
+  pipelineRef:
+    name: pp-ci
+  workspaces:
+    - name: shared
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 500Mi
