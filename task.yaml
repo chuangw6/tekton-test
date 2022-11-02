@@ -5,7 +5,7 @@ metadata:
 spec:
   params:
   - name: username
-    default: "xxx"
+    default: "yyy"
   steps:
   - image: alpine:3.15
     script: |
