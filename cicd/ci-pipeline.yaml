@@ -1,4 +1,3 @@
-
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
@@ -18,7 +17,7 @@ spec:
       description: Name (reference) of the image to build.
     - name: kaniko_BUILDER_IMAGE
       description: The Kaniko executor image to use
-      value: gcr.io/kaniko-project/executor:latest
+      default: gcr.io/kaniko-project/executor:latest
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
       default: ./Dockerfile
