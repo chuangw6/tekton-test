@@ -14,8 +14,11 @@ spec:
       description: the source repo to clone
     - name: git-revision
       description: the revision of the source repo
-    - name: IMAGE
+    - name: kaniko_IMAGE
       description: Name (reference) of the image to build.
+    - name: kaniko_BUILDER_IMAGE
+      description: The Kaniko executor image to use
+      value: gcr.io/kaniko-project/executor:latest
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
       default: ./Dockerfile
@@ -69,7 +72,9 @@ spec:
       runAfter: ["cat-readme"]
       params:
         - name: IMAGE
-          value: $(params.IMAGE)
+          value: $(params.kaniko_IMAGE)
+        - name: BUILDER_IMAGE
+          value: $(params.kaniko_BUILDER_IMAGE)
       workspaces:
         - name: source
           workspace: shared
