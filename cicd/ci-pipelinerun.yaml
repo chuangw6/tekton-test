@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: pr-ci
+  name: clone-and-build-pipelinerun
 spec:
   serviceAccountName: myksa
   params:
@@ -9,10 +9,17 @@ spec:
       value: https://github.com/chuangw6/tekton-test
     - name: git-revision
       value: main
-    - name: IMAGE
+    - name: kaniko_IMAGE_REF
       value: us-central1-docker.pkg.dev/chuangw-test/kaniko-example/ci
   pipelineRef:
-    name: pp-ci
+    resolver: git
+    params:
+      - name: url
+        value: https://github.com/chuangw6/tekton-test
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: cicd/ci-pipeline.yaml
   workspaces:
     - name: shared
       volumeClaimTemplate:

@@ -1,22 +1,22 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: pp-ci
+  name: clone-and-build-pipeline
 spec:
   description: |
-      This pipeline contains ci tasks - clone, check repo, image build. The
-      dependency is git-clone -> cat-readme -> build-image.
+    This simple pipeline contains 2 CI tasks - clone source repo, and build an image using
+    the dockerfile in the cloned repo.
   workspaces:
     - name: shared
   params:
     - name: git-repo
-      description: the source repo to clone
+      description: The source repo to clone.
     - name: git-revision
-      description: the revision of the source repo
-    - name: kaniko_IMAGE
+      description: The revision of the source repo.
+    - name: kaniko_IMAGE_REF
       description: Name (reference) of the image to build.
     - name: kaniko_BUILDER_IMAGE
-      description: The Kaniko executor image to use
+      description: The Kaniko executor image to use.
       default: gcr.io/kaniko-project/executor:latest
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
@@ -24,10 +24,10 @@ spec:
   results:
     - name: CHAINS-GIT_URL
       description: Git URL that the source repo containing Dockerfile is fetched from
-      value: $(tasks.git-clone.results.url)
+      value: $(tasks.clone-source.results.url)
     - name: CHAINS-GIT_COMMIT
       description: Git commit sha of the source repo containing Dockerfile
-      value: $(tasks.git-clone.results.commit)
+      value: $(tasks.clone-source.results.commit)
     - name: IMAGE_DIGEST
       description: Digest of the image just built by the pipeline.
       value: $(tasks.build-image.results.IMAGE_DIGEST)
@@ -35,7 +35,16 @@ spec:
       description: URL of the image just built by the pipeline.
       value: $(tasks.build-image.results.IMAGE_URL)
   tasks:
-    - name: git-clone
+    - name: clone-source
+      taskRef:
+        resolver: bundles
+        params:
+          - name: bundle
+            value: gcr.io/tekton-releases/catalog/upstream/git-clone:0.7
+          - name: name
+            value: git-clone
+          - name: kind
+            value: task
       params:
         - name: url
           value: $(params.git-repo)
@@ -44,45 +53,24 @@ spec:
       workspaces:
         - name: output
           workspace: shared
-      taskRef:
-        resolver: git
-        params:
-          - name: url
-            value: https://github.com/tektoncd/catalog
-          - name: revision
-            value: main
-          - name: pathInRepo
-            value: task/git-clone/0.7/git-clone.yaml
-    - name: cat-readme
-      runAfter: ["git-clone"]
-      workspaces:
-      - name: source
-        workspace: shared
-      taskSpec:
-        workspaces:
-        - name: source
-        steps:
-        - name: echo-readme
-          image: zshusers/zsh:4.3.15
-          script: |
-            #!/usr/bin/env zsh
-            cat $(workspaces.source.path)/README.md
     - name: build-image
-      runAfter: ["cat-readme"]
+      runAfter: ["clone-source"]
+      taskRef:
+        resolver: bundles
+        params:
+          - name: bundle
+            value: gcr.io/tekton-releases/catalog/upstream/kaniko:0.6
+          - name: name
+            value: kaniko
+          - name: kind
+            value: task
       params:
         - name: IMAGE
-          value: $(params.kaniko_IMAGE)
+          value: $(params.kaniko_IMAGE_REF)
         - name: BUILDER_IMAGE
           value: $(params.kaniko_BUILDER_IMAGE)
+        - name: DOCKERFILE
+          value: $(params.DOCKERFILE)
       workspaces:
         - name: source
           workspace: shared
-      taskRef:
-        resolver: git
-        params:
-          - name: url
-            value: https://github.com/tektoncd/catalog
-          - name: revision
-            value: main
-          - name: pathInRepo
-            value: task/kaniko/0.6/kaniko.yaml
