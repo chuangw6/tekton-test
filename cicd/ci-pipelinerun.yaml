@@ -17,7 +17,7 @@ spec:
       - name: url
         value: https://github.com/chuangw6/tekton-test
       - name: revision
-        value: main
+        value: v0.2
       - name: pathInRepo
         value: cicd/ci-pipeline.yaml
   workspaces:
